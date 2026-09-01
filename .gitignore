@@ -1,0 +1,12 @@
+# python
+backend/venv/
+backend/__pycache__/
+backend/*.pyc
+backend/.env
+*.sqlite3
+frontend/node_module/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+.DS_Store
+Thumbs.db
