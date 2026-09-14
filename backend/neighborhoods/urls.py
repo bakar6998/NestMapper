@@ -42,4 +42,9 @@ urlpatterns = [
         views.get_recommendations,
         name='recommendations'
     ),
+    path(
+    'search/',
+    views.search_neighborhoods,
+    name='search-neighborhoods'
+),
 ]
