@@ -129,116 +129,46 @@ def compare_neighborhoods(request):
 
     return Response(serializer.data)
 
-
 @api_view(['POST'])
 def get_recommendations(request):
     """
     POST /api/recommend/
-
-    Accepts user preferences and returns
-    top 5 matching neighborhoods.
-
-    Request body:
-    {
-        "budget": 2000,
-        "transit_priority": 4,
-        "has_kids": true,
-        "has_car": false,
-        "needs_accessibility": true,
-        "vibe": "Quiet"
-    }
+    Accepts user preferences
+    Returns top 5 matching neighborhoods
     """
-    # Get user preferences from request
-    budget = request.data.get('budget', 3000)
-    transit_priority = request.data.get('transit_priority', 3)
-    has_kids = request.data.get('has_kids', False)
-    has_car = request.data.get('has_car', False)
-    needs_accessibility = request.data.get('needs_accessibility', False)
-    vibe = request.data.get('vibe', None)
+    from .recommendation import get_recommendations as recommend
+    from .serializers import NeighborhoodDetailSerializer
 
-    # Start with all neighborhoods
-    neighborhoods = Neighborhood.objects.all()
+    try:
+        preferences = {
+            'budget': request.data.get('budget', 3000),
+            'borough': request.data.get('borough', 'Any'),
+            'transit_priority': request.data.get('transit_priority', 3),
+            'life_situation': request.data.get('life_situation', ''),
+            'priorities': request.data.get('priorities', []),
+            'needs_accessibility': request.data.get('needs_accessibility', False),
+            'has_car': request.data.get('has_car', False),
+            'has_children': request.data.get('has_children', False),
+            'has_pet': request.data.get('has_pet', False),
+        }
 
-    # Filter by vibe if provided
-    if vibe:
-        neighborhoods = neighborhoods.filter(vibe=vibe)
+        results = recommend(preferences)
 
-    # Filter by budget
-    # Only show neighborhoods where
-    # 1BR rent is within budget + 20%
-    # to give some flexibility
-    affordable = []
-    for n in neighborhoods:
-        try:
-            if n.rent.one_bedroom <= budget * 1.2:
-                affordable.append(n)
-        except:
-            affordable.append(n)
-
-    # Build dynamic weights based on preferences
-    weights = {
-        'affordability': 0.20,
-        'transit': 0.20,
-        'safety': 0.20,
-        'family': 0.15,
-        'accessibility': 0.10,
-        'convenience': 0.15
-    }
-
-    # Increase transit weight if high priority
-    if transit_priority >= 4:
-        weights['transit'] = 0.30
-        weights['affordability'] = 0.15
-
-    # Increase family weight if has kids
-    if has_kids:
-        weights['family'] = 0.25
-        weights['safety'] = 0.25
-        weights['convenience'] = 0.10
-
-    # Increase accessibility weight if needed
-    if needs_accessibility:
-        weights['accessibility'] = 0.30
-        weights['transit'] = 0.25
-        weights['affordability'] = 0.15
-        weights['family'] = 0.10
-        weights['convenience'] = 0.10
-        weights['safety'] = 0.10
-
-    # Calculate match score for each neighborhood
-    scored = []
-    for n in affordable:
-        try:
-            scores = n.scores
-            match_score = (
-                scores.affordability_score * weights['affordability'] +
-                scores.transit_score * weights['transit'] +
-                scores.safety_score * weights['safety'] +
-                scores.family_score * weights['family'] +
-                scores.accessibility_score * weights['accessibility'] +
-                scores.convenience_score * weights['convenience']
+        response_data = []
+        for item in results:
+            serializer = NeighborhoodDetailSerializer(
+                item['neighborhood']
             )
-            scored.append({
-                'neighborhood': n,
-                'match_score': round(match_score, 2)
-            })
-        except:
-            pass
+            data = serializer.data
+            data['match_score'] = item['match_score']
+            data['match_percentage'] = item['match_percentage']
+            data['reasons'] = item['reasons']
+            response_data.append(data)
 
-    # Sort by match score highest first
-    scored.sort(key=lambda x: x['match_score'], reverse=True)
+        return Response(response_data)
 
-    # Take top 5 results
-    top_5 = scored[:5]
-
-    # Serialize the results
-    results = []
-    for item in top_5:
-        serializer = NeighborhoodDetailSerializer(
-            item['neighborhood']
+    except Exception as e:
+        return Response(
+            {'error': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
-        data = serializer.data
-        data['match_score'] = item['match_score']
-        results.append(data)
-
-    return Response(results)
