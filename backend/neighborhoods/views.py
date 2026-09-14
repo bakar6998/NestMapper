@@ -172,3 +172,29 @@ def get_recommendations(request):
             {'error': str(e)},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
+@api_view(['GET'])
+def search_neighborhoods(request):
+    """
+    GET /api/search/?q=Astorea
+
+    Fuzzy search — finds neighborhoods
+    even with spelling mistakes!
+    """
+    from .search import fuzzy_search
+
+    query = request.query_params.get('q', '')
+
+    if not query:
+        return Response(
+            {'error': 'Please provide a search query'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    results = fuzzy_search(query)
+
+    serializer = NeighborhoodListSerializer(
+        results,
+        many=True
+    )
+
+    return Response(serializer.data)
