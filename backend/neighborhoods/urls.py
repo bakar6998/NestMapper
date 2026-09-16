@@ -63,4 +63,10 @@ path(
     views.get_all_trends,
     name='all-trends'
 ),
+    # Affordability calculator
+path(
+    'neighborhoods/<int:pk>/affordability/',
+    views.get_affordability,
+    name='affordability'
+),
 ]
