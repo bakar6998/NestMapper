@@ -235,3 +235,51 @@ def get_similar_neighborhoods(request, pk):
             {'error': str(e)},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
+    
+@api_view(['GET'])
+def get_neighborhood_trend(request, pk):
+    """
+    GET /api/neighborhoods/1/trend/
+
+    Returns trend analysis for
+    a specific neighborhood
+    """
+    from .trend import detect_trend
+
+    try:
+        neighborhood = Neighborhood.objects.get(pk=pk)
+        trend_data = detect_trend(neighborhood)
+        return Response(trend_data)
+
+    except Neighborhood.DoesNotExist:
+        return Response(
+            {'error': 'Neighborhood not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    except Exception as e:
+        return Response(
+            {'error': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+@api_view(['GET'])
+def get_all_trends(request):
+    """
+    GET /api/trends/
+
+    Returns trend analysis for
+    ALL neighborhoods
+    Rising, Stable, Declining
+    """
+    from .trend import detect_all_trends
+
+    try:
+        trends = detect_all_trends()
+        return Response(trends)
+
+    except Exception as e:
+        return Response(
+            {'error': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )

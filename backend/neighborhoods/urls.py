@@ -50,4 +50,17 @@ urlpatterns = [
         views.search_neighborhoods,
         name='search-neighborhoods'
     ),
+    # Trend for single neighborhood
+path(
+    'neighborhoods/<int:pk>/trend/',
+    views.get_neighborhood_trend,
+    name='neighborhood-trend'
+),
+
+# All trends
+path(
+    'trends/',
+    views.get_all_trends,
+    name='all-trends'
+),
 ]
