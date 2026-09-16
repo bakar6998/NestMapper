@@ -198,3 +198,40 @@ def search_neighborhoods(request):
     )
 
     return Response(serializer.data)
+@api_view(['GET'])
+def get_similar_neighborhoods(request, pk):
+    """
+    GET /api/neighborhoods/1/similar/
+
+    Returns 3 most similar neighborhoods
+    to the given neighborhood.
+    Uses Euclidean distance on score vectors.
+    """
+    from .similarity import get_similar_neighborhoods as find_similar
+
+    try:
+        results = find_similar(pk)
+
+        if not results:
+            return Response(
+                {'error': 'No similar neighborhoods found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        response_data = []
+        for item in results:
+            serializer = NeighborhoodListSerializer(
+                item['neighborhood']
+            )
+            data = serializer.data
+            data['similarity'] = item['similarity']
+            data['distance'] = item['distance']
+            response_data.append(data)
+
+        return Response(response_data)
+
+    except Exception as e:
+        return Response(
+            {'error': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
