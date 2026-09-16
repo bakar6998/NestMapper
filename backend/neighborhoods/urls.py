@@ -3,16 +3,20 @@ from . import views
 
 urlpatterns = [
     # Get all neighborhoods
-    # GET /api/neighborhoods/
-    # GET /api/neighborhoods/?borough=Brooklyn
     path(
         'neighborhoods/',
         views.get_all_neighborhoods,
         name='all-neighborhoods'
     ),
 
+    # Similar neighborhoods — MUST be before detail URL
+    path(
+        'neighborhoods/<int:pk>/similar/',
+        views.get_similar_neighborhoods,
+        name='similar-neighborhoods'
+    ),
+
     # Get single neighborhood detail
-    # GET /api/neighborhoods/1/
     path(
         'neighborhoods/<int:pk>/',
         views.get_neighborhood_detail,
@@ -20,7 +24,6 @@ urlpatterns = [
     ),
 
     # Get neighborhoods by borough
-    # GET /api/boroughs/Manhattan/
     path(
         'boroughs/<str:borough>/',
         views.get_neighborhoods_by_borough,
@@ -28,23 +31,23 @@ urlpatterns = [
     ),
 
     # Compare two neighborhoods
-    # GET /api/compare/?ids=1,2
     path(
         'compare/',
         views.compare_neighborhoods,
         name='compare-neighborhoods'
     ),
 
-    # Get personalized recommendations
-    # POST /api/recommend/
+    # Recommendations
     path(
         'recommend/',
         views.get_recommendations,
         name='recommendations'
     ),
+
+    # Search
     path(
-    'search/',
-    views.search_neighborhoods,
-    name='search-neighborhoods'
-),
+        'search/',
+        views.search_neighborhoods,
+        name='search-neighborhoods'
+    ),
 ]
