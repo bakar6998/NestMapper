@@ -283,3 +283,43 @@ def get_all_trends(request):
             {'error': str(e)},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
+@api_view(['GET'])
+def get_affordability(request, pk):
+    """
+    GET /api/neighborhoods/1/affordability/
+    GET /api/neighborhoods/1/affordability/?income=85000
+
+    Returns detailed affordability breakdown
+    based on NYC median income or
+    provided income
+    """
+    from .affordability import calculate_real_affordability
+
+    try:
+        neighborhood = Neighborhood.objects.get(pk=pk)
+
+        # Get income from query params if provided
+        income = request.query_params.get('income', None)
+        if income:
+            income = float(income)
+
+        result = calculate_real_affordability(
+            neighborhood.rent,
+            income=income
+        )
+
+        result['neighborhood'] = neighborhood.name
+        result['borough'] = neighborhood.borough
+
+        return Response(result)
+
+    except Neighborhood.DoesNotExist:
+        return Response(
+            {'error': 'Neighborhood not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    except Exception as e:
+        return Response(
+            {'error': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
