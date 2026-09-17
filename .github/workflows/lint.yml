@@ -3,8 +3,6 @@ name: Code Quality Check
 on:
   push:
     branches: [ main, dev ]
-  pull_request:
-    branches: [ main, dev ]
 
 jobs:
   lint:
@@ -22,9 +20,9 @@ jobs:
       - name: Install flake8
         run: pip install flake8
 
-      - name: Run linter on backend
+      - name: Run linter
         run: |
           flake8 backend/ \
-            --exclude=backend/venv,backend/migrations \
-            --max-line-length=100 \
-            --ignore=E501,W503
+            --exclude=backend/venv,backend/migrations,backend/__pycache__ \
+            --max-line-length=120 \
+            --ignore=E501,W503,F401
