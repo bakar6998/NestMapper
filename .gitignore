@@ -10,3 +10,6 @@ frontend/.env
 frontend/.env.local
 .DS_Store
 Thumbs.db
+backend/data/raw/*.csv
+backend/data/raw/*.zip
+backend/data/cleaned/*.csv
