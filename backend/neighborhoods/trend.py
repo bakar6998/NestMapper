@@ -95,7 +95,7 @@ def detect_trend(neighborhood):
             }
         }
 
-    except Exception as e:
+    except Exception:
         return {
             'trend': 'Unknown',
             'icon': '❓',
