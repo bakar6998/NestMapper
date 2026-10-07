@@ -11,7 +11,7 @@ packaging==26.3
 pandas==3.0.5
 psycopg2-binary==2.9.12
 pyogrio==0.13.0
-pyproj==3.8.0
+pyproj>=2.4.2,<3.0.0
 python-dateutil==2.9.0.post0
 python-dotenv==1.2.3
 python-Levenshtein==0.27.5
