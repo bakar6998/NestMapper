@@ -75,7 +75,7 @@ def get_recommendations(preferences):
                 'match_percentage': round(match_score * 10, 1),
                 'reasons': reasons
             })
-        except Exception as e:
+        except Exception:
             pass
 
     # Step 6 — Sort by match score

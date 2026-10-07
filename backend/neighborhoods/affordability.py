@@ -137,14 +137,14 @@ def get_overall_summary(studio, one_br, recommended_max):
             'verdict': 'Slightly above median budget',
             'icon': '⚠️',
             'color': '#D97706',
-            'tip': f'Consider roommates or a studio '
-                   f'to stay within budget'
+            'tip': 'Consider roommates or a studio to stay within budget'
+                   
         }
     else:
         return {
             'verdict': 'Above median income budget',
             'icon': '❌',
             'color': '#DC2626',
-            'tip': f'This neighborhood requires above '
-                   f'average income or roommates'
+            'tip': 'This neighborhood requires above average income or roommates'
+                   
         }
