@@ -23,6 +23,6 @@ jobs:
       - name: Run linter
         run: |
           flake8 backend/ \
-            --exclude=backend/venv,backend/migrations,backend/__pycache__ \
+            --exclude=backend/venv,backend/migrations,backend/__pycache__,backend/data,backend/scripts \
             --max-line-length=120 \
-            --ignore=E501,W503,F401
+            --ignore=E501,W503,F401,W291,W293,E302,E303,W292

@@ -26,8 +26,10 @@ jobs:
 
       - name: Run Django tests
         env:
+          CI: true
           SECRET_KEY: test-secret-key-for-ci
           DEBUG: True
         run: |
           cd backend
+          python manage.py migrate
           python manage.py test --verbosity=2
