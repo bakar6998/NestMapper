@@ -177,12 +177,12 @@ def compute_all_scores():
                 n.rent.two_bedroom
             ) / 3
             rent_avgs.append(avg)
-        except:
+        except Exception:
             pass
 
         try:
             crime_indices.append(n.safety.crime_index)
-        except:
+        except Exception:
             pass
 
     # Calculate min and max
@@ -207,13 +207,13 @@ def compute_all_scores():
                 scores['affordability'] = calculate_affordability_score(
                     n.rent, min_rent, max_rent
                 )
-            except:
+            except Exception:
                 scores['affordability'] = 5.0
 
             # Transit
             try:
                 scores['transit'] = calculate_transit_score(n.transit)
-            except:
+            except Exception:
                 scores['transit'] = 5.0
 
             # Safety
@@ -221,13 +221,13 @@ def compute_all_scores():
                 scores['safety'] = calculate_safety_score(
                     n.safety, min_crime, max_crime
                 )
-            except:
+            except Exception:
                 scores['safety'] = 5.0
 
             # Family
             try:
                 scores['family'] = calculate_family_score(n.amenities)
-            except:
+            except Exception:
                 scores['family'] = 5.0
 
             # Accessibility
@@ -235,7 +235,7 @@ def compute_all_scores():
                 scores['accessibility'] = calculate_accessibility_score(
                     n.accessibility
                 )
-            except:
+            except Exception:
                 scores['accessibility'] = 5.0
 
             # Convenience
@@ -243,7 +243,7 @@ def compute_all_scores():
                 scores['convenience'] = calculate_convenience_score(
                     n.amenities
                 )
-            except:
+            except Exception:
                 scores['convenience'] = 5.0
 
             # Overall
