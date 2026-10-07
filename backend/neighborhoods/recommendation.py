@@ -43,7 +43,7 @@ def get_recommendations(preferences):
             # Allow 20% over budget for flexibility
             if avg_rent <= budget * 1.2:
                 affordable.append(n)
-        except:
+        except Exception:
             affordable.append(n)
 
     if not affordable:
@@ -186,7 +186,7 @@ def generate_reasons(neighborhood, preferences, scores):
             reasons.append(
                 f"Average rent ${avg_rent:.0f}/mo fits your ${budget} budget"
             )
-    except:
+    except Exception:
         pass
 
     # Transit reason
@@ -196,7 +196,7 @@ def generate_reasons(neighborhood, preferences, scores):
             reasons.append(
                 f"Excellent transit with {len(lines)} subway lines"
             )
-        except:
+        except Exception:
             reasons.append("Great public transit access")
 
     # Safety reason
@@ -212,7 +212,7 @@ def generate_reasons(neighborhood, preferences, scores):
             reasons.append(
                 f"{schools} schools nearby — great for families"
             )
-        except:
+        except Exception:
             reasons.append("Family friendly neighborhood")
 
     # Accessibility reason
@@ -222,7 +222,7 @@ def generate_reasons(neighborhood, preferences, scores):
                 reasons.append(
                     "Elevator-accessible subway station nearby"
                 )
-        except:
+        except Exception:
             pass
 
     # Vibe reason
