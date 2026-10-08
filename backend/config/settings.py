@@ -63,6 +63,9 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # Uses SQLite for GitHub Actions CI
 # Uses PostgreSQL for local development
+import os
+
+# Database
 if os.environ.get('CI'):
     DATABASES = {
         'default': {
@@ -70,17 +73,27 @@ if os.environ.get('CI'):
             'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
+elif os.environ.get('DATABASE_URL'):
+    import dj_database_url
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=os.environ.get('DATABASE_URL'),
+            conn_max_age=600,
+            ssl_require=True
+        )
+    }
 else:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
-            'NAME': os.environ.get('DB_NAME', 'nestmapper'),
-            'USER': os.environ.get('DB_USER', 'bakar'),
-            'PASSWORD': os.environ.get('DB_PASSWORD', ''),
-            'HOST': os.environ.get('DB_HOST', 'localhost'),
-            'PORT': os.environ.get('DB_PORT', '5432'),
+            'NAME': 'nestmapper',
+            'USER': 'bakar',
+            'PASSWORD': '',
+            'HOST': 'localhost',
+            'PORT': '5432',
         }
     }
+
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
