@@ -63,9 +63,11 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # Uses SQLite for GitHub Actions CI
 # Uses PostgreSQL for local development
-import os
+# Database configuration
+import dj_database_url
 
-# Database
+DATABASE_URL = os.environ.get('DATABASE_URL')
+
 if os.environ.get('CI'):
     DATABASES = {
         'default': {
@@ -73,13 +75,11 @@ if os.environ.get('CI'):
             'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
-elif os.environ.get('DATABASE_URL'):
-    import dj_database_url
+elif DATABASE_URL:
     DATABASES = {
-        'default': dj_database_url.config(
-            default=os.environ.get('DATABASE_URL'),
-            conn_max_age=600,
-            ssl_require=True
+        'default': dj_database_url.parse(
+            DATABASE_URL,
+            conn_max_age=600
         )
     }
 else:
@@ -93,6 +93,7 @@ else:
             'PORT': '5432',
         }
     }
+
 
 
 # Password validation
