@@ -12,4 +12,4 @@ frontend/.env.local
 Thumbs.db
 backend/data/raw/*.csv
 backend/data/raw/*.zip
-backend/data/cleaned/*.csv
+backend/data/cleaned/*.csv.env.local
