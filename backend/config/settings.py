@@ -64,7 +64,7 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Uses SQLite for GitHub Actions CI
 # Uses PostgreSQL for local development
 # Database configuration
-import dj_database_url
+import dj_database_url  # noqa: E402
 
 DATABASE_URL = os.environ.get('DATABASE_URL')
 
