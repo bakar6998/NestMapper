@@ -1,8 +1,10 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, ArrowRight, Check, ChevronDown, MapPin, Plus, ShieldCheck, Train, X } from 'lucide-react'
+import { getNeighborhoods, compareNeighborhoods } from '@/lib/api'
 
 type Neighborhood = {
   name: string
@@ -35,15 +37,74 @@ function NeighborhoodColumn({ data, onRemove }: { data: Neighborhood; onRemove: 
     <Link href="/#explore-form" className="button-secondary mt-7 w-full justify-center">View full profile <ArrowRight size={16} /></Link>
   </article>
 }
-
 export default function ComparePage() {
   const [first, setFirst] = useState('Astoria')
   const [second, setSecond] = useState('Park Slope')
-  const compared = useMemo(() => [neighborhoods.find(item => item.name === first)!, neighborhoods.find(item => item.name === second)!], [first, second])
+
+  const [apiNeighborhoods, setApiNeighborhoods] = useState<any[]>([])
+  const [comparisonData, setComparisonData] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    getNeighborhoods()
+      .then((data) => {
+        setApiNeighborhoods(data)
+        setLoading(false)
+      })
+      .catch((err) => {
+        console.error(err)
+        setLoading(false)
+      })
+  }, [])
+
+  useEffect(() => {
+    if (apiNeighborhoods.length === 0) return
+
+    const firstNeighborhood = apiNeighborhoods.find(
+      (item) => item.name === first
+    )
+
+    const secondNeighborhood = apiNeighborhoods.find(
+      (item) => item.name === second
+    )
+
+    if (!firstNeighborhood || !secondNeighborhood) return
+
+    compareNeighborhoods([
+      firstNeighborhood.id,
+      secondNeighborhood.id,
+    ])
+      .then((data) => {
+        setComparisonData(data)
+      })
+      .catch((err) => {
+        console.error(err)
+      })
+  }, [first, second, apiNeighborhoods])
+  
+
+  const compared = useMemo(
+    () => [
+      neighborhoods.find((item) => item.name === first)!,
+      neighborhoods.find((item) => item.name === second)!,
+    ],
+    [first, second]
+  )
 
   return <div className="min-h-screen bg-background"><header className="sticky top-0 z-50 border-b border-border/80 bg-background/95 backdrop-blur"><div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 lg:px-8"><Link href="/" className="text-xl font-bold tracking-tight">NestMapper <span className="text-primary">NYC</span></Link><nav className="flex items-center gap-4 md:gap-7"><Link href="/" className="hidden text-sm text-muted-foreground hover:text-foreground sm:block">Explore</Link><Link href="/compare" className="text-sm font-semibold text-primary">Compare</Link><Link href="/#explore-form" className="button-primary px-4 py-2.5">Get started</Link></nav></div></header>
     <main><section className="mx-auto max-w-7xl px-5 pb-10 pt-12 lg:px-8 lg:pb-14 lg:pt-20"><Link href="/" className="inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-foreground"><ArrowLeft size={16} /> Back to explore</Link><div className="mt-9 max-w-3xl"><p className="eyebrow">SIDE BY SIDE, CLEAR AS DAY</p><h1 className="mt-3 text-balance text-4xl font-bold tracking-tight md:text-6xl">Compare neighborhoods with confidence.</h1><p className="mt-5 max-w-2xl text-base leading-7 text-muted-foreground md:text-lg">Put two NYC neighborhoods next to each other and see what really matters: rent, commute, safety, accessibility, and the feeling of home.</p></div></section>
       <section className="mx-auto max-w-7xl px-5 lg:px-8"><div className="grid gap-4 rounded-2xl border border-border bg-card p-4 md:grid-cols-[1fr_auto_1fr] md:items-end md:p-5"><label className="block text-sm font-semibold">First neighborhood<span className="relative mt-2 block"><select value={first} onChange={event => setFirst(event.target.value)} className="h-12 w-full appearance-none rounded-xl border border-border bg-background px-4 pr-10 text-base"><option value="Astoria">Astoria</option><option value="Park Slope">Park Slope</option><option value="Riverdale">Riverdale</option><option value="Williamsburg">Williamsburg</option></select><ChevronDown className="pointer-events-none absolute right-4 top-3.5 text-muted-foreground" size={18} /></span></label><div className="hidden items-center justify-center md:flex"><span className="flex size-10 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">VS</span></div><label className="block text-sm font-semibold">Second neighborhood<span className="relative mt-2 block"><select value={second} onChange={event => setSecond(event.target.value)} className="h-12 w-full appearance-none rounded-xl border border-border bg-background px-4 pr-10 text-base"><option value="Astoria">Astoria</option><option value="Park Slope">Park Slope</option><option value="Riverdale">Riverdale</option><option value="Williamsburg">Williamsburg</option></select><ChevronDown className="pointer-events-none absolute right-4 top-3.5 text-muted-foreground" size={18} /></span></label></div></section>
+      {loading && (
+  <p className="mx-auto max-w-7xl px-5 pt-4 text-sm text-muted-foreground lg:px-8">
+    Loading neighborhood data...
+  </p>
+)}
+
+{comparisonData && (
+  <p className="mx-auto max-w-7xl px-5 pt-4 text-sm text-green-600 lg:px-8">
+    Comparison data loaded from backend.
+  </p>
+)}
       <section className="mx-auto max-w-7xl px-5 py-8 lg:px-8 lg:py-10"><div className="mb-6 flex flex-wrap items-center justify-between gap-3"><div><p className="eyebrow">YOUR SHORTLIST</p><h2 className="mt-2 text-2xl font-bold">The details side by side</h2></div><span className="inline-flex items-center gap-2 text-sm text-muted-foreground"><ShieldCheck size={17} className="text-[#16a34a]" /> Independent neighborhood data</span></div><div className="grid gap-5 lg:grid-cols-2">{compared.map((item, index) => <NeighborhoodColumn key={`${item.name}-${index}`} data={item} onRemove={() => index === 0 ? setFirst('Astoria') : setSecond('Park Slope')} />)}</div></section>
       <section className="mx-auto max-w-7xl px-5 pb-16 lg:px-8"><div className="grid gap-4 rounded-2xl bg-[#0f1b31] p-7 text-white md:grid-cols-[1fr_auto] md:items-center md:p-10"><div><p className="text-xs font-bold tracking-[.18em] text-[#6ee7b7]">MAKE THE NEXT MOVE</p><h2 className="mt-3 text-2xl font-bold md:text-3xl">Not sure what fits your life?</h2><p className="mt-3 max-w-xl text-sm leading-6 text-white/70">Tell us your budget, lifestyle, and priorities. We'll help you build a shortlist worth seeing in person.</p></div><Link href="/#explore-form" className="button-light whitespace-nowrap">Get my match <ArrowRight size={16} /></Link></div></section>
     </main><footer className="border-t border-border"><div className="mx-auto flex max-w-7xl flex-col gap-3 px-5 py-8 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between lg:px-8"><Link href="/" className="font-semibold text-foreground">NestMapper <span className="text-primary">NYC</span></Link><span>Know before you move.</span><Link href="/" className="hover:text-foreground">Explore neighborhoods <ArrowRight className="ml-1 inline" size={14} /></Link></div></footer>
