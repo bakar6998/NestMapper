@@ -13,3 +13,5 @@ Thumbs.db
 backend/data/raw/*.csv
 backend/data/raw/*.zip
 backend/data/cleaned/*.csv.env.local
+.vercel
+.env*
