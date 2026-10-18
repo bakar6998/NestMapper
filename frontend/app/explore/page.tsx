@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { getNeighborhoods } from '@/lib/api'
+import NeighborhoodMap from '@/components/NeighborhoodMap'
+
 
 export default function ExplorePage() {
   const [neighborhoods, setNeighborhoods] = useState<any[]>([])
@@ -26,6 +28,7 @@ export default function ExplorePage() {
   return (
     <main>
       <h1>Explore Neighborhoods</h1>
+  <NeighborhoodMap />
 
       {neighborhoods.map((n: any) => (
         <div key={n.id}>
