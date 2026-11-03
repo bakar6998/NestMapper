@@ -4,175 +4,194 @@ import { useEffect, useRef } from 'react'
 import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 
-type Neighborhood = {
-  id: number
-  name: string
-  borough: string
-  latitude: number
-  longitude: number
+type NeighborhoodMapProps = {
+  neighborhoods?: any[]
 }
 
-type Props = {
-  neighborhoods: Neighborhood[]
-}
-
-export default function NeighborhoodMap({ neighborhoods }: Props) {
+export default function NeighborhoodMap({
+  neighborhoods = [],
+}: NeighborhoodMapProps) {
   const mapContainer = useRef<HTMLDivElement | null>(null)
-  const map = useRef<mapboxgl.Map | null>(null)
-  const markers = useRef<mapboxgl.Marker[]>([])
+  const mapRef = useRef<mapboxgl.Map | null>(null)
 
   useEffect(() => {
-    if (!mapContainer.current || map.current) return
+    if (!mapContainer.current) return
 
     const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN
 
     if (!token) {
-      console.error('Mapbox token is missing')
+      console.error('Mapbox token is missing.')
       return
     }
 
     mapboxgl.accessToken = token
 
-    const newMap = new mapboxgl.Map({
+    const map = new mapboxgl.Map({
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/light-v11',
-      center: [-73.94, 40.70],
+      center: [-73.98, 40.72],
       zoom: 9.5,
     })
 
-    newMap.addControl(
+    mapRef.current = map
+
+    map.addControl(
       new mapboxgl.NavigationControl(),
       'top-right'
     )
 
-    newMap.on('load', () => {
-      newMap.addSource('nyc-neighborhoods', {
-        type: 'geojson',
-        data: '/nyc-neighborhoods.geojson',
-      })
-
-      newMap.addLayer({
-        id: 'neighborhood-fill',
-        type: 'fill',
-        source: 'nyc-neighborhoods',
-        paint: {
-          'fill-color': '#9ca3af',
-          'fill-opacity': 0.25,
-        },
-      })
-
-      newMap.addLayer({
-        id: 'neighborhood-border',
-        type: 'line',
-        source: 'nyc-neighborhoods',
-        paint: {
-          'line-color': '#ffffff',
-          'line-width': 1.5,
-        },
-      })
-
-      newMap.on('mouseenter', 'neighborhood-fill', () => {
-        newMap.getCanvas().style.cursor = 'pointer'
-      })
-
-      newMap.on('mouseleave', 'neighborhood-fill', () => {
-        newMap.getCanvas().style.cursor = ''
-      })
-
-      newMap.on('click', 'neighborhood-fill', (e) => {
-        const feature = e.features?.[0]
-
-        if (!feature) return
-
-        const properties =
-          (feature as { properties?: Record<string, unknown> }).properties ?? {}
-
-        const name = String(
-          properties.ntaname ||
-          properties.NTAName ||
-          'Neighborhood'
+    map.on('load', async () => {
+      try {
+        const response = await fetch(
+          '/nyc-neighborhoods.geojson'
         )
 
-        const borough = String(
-          properties.boroname ||
-          properties.BoroName ||
-          'New York City'
+        const geojson = await response.json()
+
+        map.addSource('neighborhoods', {
+          type: 'geojson',
+          data: geojson,
+        })
+
+        // Gray neighborhood fill
+        map.addLayer({
+          id: 'neighborhood-fill',
+          type: 'fill',
+          source: 'neighborhoods',
+          paint: {
+            'fill-color': '#6b7280',
+            'fill-opacity': 0.6,
+          },
+        })
+
+        // White neighborhood boundary lines
+        map.addLayer({
+          id: 'neighborhood-outline',
+          type: 'line',
+          source: 'neighborhoods',
+          paint: {
+            'line-color': '#ffffff',
+            'line-width': 1.5,
+            'line-opacity': 0.95,
+          },
+        })
+
+        const hoverPopup = new mapboxgl.Popup({
+          closeButton: false,
+          closeOnClick: false,
+          offset: 10,
+        })
+
+        map.on(
+          'mousemove',
+          'neighborhood-fill',
+          (event) => {
+            map.getCanvas().style.cursor = 'pointer'
+
+            const feature = event.features?.[0]
+
+            if (!feature) return
+
+            const properties =
+              (feature.properties as Record<
+                string,
+                any
+              >) || {}
+
+            const neighborhoodName =
+              properties.NTAName ||
+              properties.ntaname ||
+              properties.name ||
+              properties.NTA2020 ||
+              'NYC Neighborhood'
+
+            hoverPopup
+              .setLngLat(event.lngLat)
+              .setHTML(
+                `<div style="font-size:13px;font-weight:600;">
+                  ${neighborhoodName}
+                </div>`
+              )
+              .addTo(map)
+          }
         )
 
-        const popupContent = document.createElement('div')
+        map.on(
+          'mouseleave',
+          'neighborhood-fill',
+          () => {
+            map.getCanvas().style.cursor = ''
+            hoverPopup.remove()
+          }
+        )
 
-        const title = document.createElement('strong')
-        title.textContent = name
+        map.on(
+          'click',
+          'neighborhood-fill',
+          (event) => {
+            const feature = event.features?.[0]
 
-        const boroughText = document.createElement('div')
-        boroughText.textContent = borough
+            if (!feature) return
 
-        popupContent.appendChild(title)
-        popupContent.appendChild(boroughText)
+            const properties =
+              (feature.properties as Record<
+                string,
+                any
+              >) || {}
 
-        new mapboxgl.Popup()
-          .setLngLat(e.lngLat)
-          .setDOMContent(popupContent)
-          .addTo(newMap)
-      })
+            const neighborhoodName =
+              properties.NTAName ||
+              properties.ntaname ||
+              properties.name ||
+              properties.NTA2020 ||
+              'NYC Neighborhood'
+
+            new mapboxgl.Popup()
+              .setLngLat(event.lngLat)
+              .setHTML(
+                `
+                <div style="padding:4px;">
+                  <strong>${neighborhoodName}</strong>
+                  <div style="font-size:12px;margin-top:3px;">
+                    Click the neighborhood card below for more details.
+                  </div>
+                </div>
+                `
+              )
+              .addTo(map)
+          }
+        )
+      } catch (error) {
+        console.error(
+          'Failed to load neighborhood boundaries:',
+          error
+        )
+      }
     })
 
-    map.current = newMap
-
     return () => {
-      markers.current.forEach((marker) => marker.remove())
-      markers.current = []
-
-      newMap.remove()
-      map.current = null
+      map.remove()
+      mapRef.current = null
     }
   }, [])
 
-  useEffect(() => {
-    if (!map.current) return
-
-    markers.current.forEach((marker) => marker.remove())
-    markers.current = []
-
-    neighborhoods.forEach((neighborhood) => {
-      if (
-        typeof neighborhood.latitude !== 'number' ||
-        typeof neighborhood.longitude !== 'number'
-      ) {
-        return
-      }
-
-      const popupContent = document.createElement('div')
-
-      const title = document.createElement('strong')
-      title.textContent = neighborhood.name
-
-      const boroughText = document.createElement('div')
-      boroughText.textContent = neighborhood.borough
-
-      popupContent.appendChild(title)
-      popupContent.appendChild(boroughText)
-
-      const popup = new mapboxgl.Popup({
-        offset: 25,
-      }).setDOMContent(popupContent)
-
-      const marker = new mapboxgl.Marker()
-        .setLngLat([
-          neighborhood.longitude,
-          neighborhood.latitude,
-        ])
-        .setPopup(popup)
-        .addTo(map.current!)
-
-      markers.current.push(marker)
-    })
-  }, [neighborhoods])
-
   return (
-    <div
-      ref={mapContainer}
-      className="h-[550px] w-full overflow-hidden rounded-2xl border"
-    />
+    <div className="relative overflow-hidden rounded-2xl border bg-muted">
+      <div
+        ref={mapContainer}
+        className="h-[500px] w-full"
+      />
+
+      <div className="absolute bottom-4 left-4 z-10 rounded-lg border bg-background/95 px-3 py-2 text-xs shadow-sm">
+        <div className="mb-1 font-semibold">
+          Neighborhood Boundaries
+        </div>
+
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <span className="h-3 w-3 rounded-sm border border-white bg-gray-500" />
+          NYC neighborhood
+        </div>
+      </div>
+    </div>
   )
 }

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { Search } from 'lucide-react'
+import { Search, X } from 'lucide-react'
 import { getNeighborhoods } from '@/lib/api'
 import NeighborhoodMap from '@/components/NeighborhoodMap'
 
@@ -14,6 +14,15 @@ const boroughs = [
   'Staten Island',
 ]
 
+const scoreKeys = [
+  ['affordability', 'Affordability'],
+  ['transit', 'Transit'],
+  ['safety', 'Safety'],
+  ['family', 'Family'],
+  ['accessibility', 'Accessibility'],
+  ['convenience', 'Convenience'],
+]
+
 export default function ExplorePage() {
   const [neighborhoods, setNeighborhoods] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -21,11 +30,13 @@ export default function ExplorePage() {
 
   const [search, setSearch] = useState('')
   const [selectedBorough, setSelectedBorough] = useState('All')
+  const [selectedNeighborhood, setSelectedNeighborhood] =
+    useState<any | null>(null)
 
   useEffect(() => {
     getNeighborhoods()
       .then((data) => {
-        setNeighborhoods(data)
+        setNeighborhoods(Array.isArray(data) ? data : [])
         setError(false)
       })
       .catch((err) => {
@@ -55,10 +66,34 @@ export default function ExplorePage() {
     })
   }, [neighborhoods, search, selectedBorough])
 
+  const clearFilters = () => {
+    setSearch('')
+    setSelectedBorough('All')
+  }
+
+  const formatRent = (neighborhood: any) => {
+    const rent =
+      neighborhood.rent?.average_1br ??
+      neighborhood.rent?.median_rent ??
+      neighborhood.average_rent
+
+    if (rent === null || rent === undefined || rent === '') {
+      return 'Rent data will appear here.'
+    }
+
+    if (typeof rent === 'number') {
+      return `$${rent.toLocaleString()}`
+    }
+
+    return String(rent)
+  }
+
+  const hasActiveFilters =
+    search.trim() !== '' || selectedBorough !== 'All'
+
   return (
     <main className="min-h-screen bg-background px-5 py-8 lg:px-8">
       <div className="mx-auto max-w-7xl">
-
         <div className="mb-6">
           <h1 className="text-3xl font-bold">
             Explore Neighborhoods
@@ -69,12 +104,8 @@ export default function ExplorePage() {
           </p>
         </div>
 
-        {/* Search box */}
         <div className="mb-5 flex items-center gap-3 rounded-xl border bg-background px-4 py-3">
-          <Search
-            size={20}
-            className="text-muted-foreground"
-          />
+          <Search size={20} className="text-muted-foreground" />
 
           <input
             type="text"
@@ -83,10 +114,20 @@ export default function ExplorePage() {
             placeholder="Search neighborhood..."
             className="w-full bg-transparent outline-none"
           />
+
+          {search && (
+            <button
+              type="button"
+              onClick={() => setSearch('')}
+              className="rounded-md p-1 text-muted-foreground hover:bg-muted"
+              aria-label="Clear search"
+            >
+              <X size={18} />
+            </button>
+          )}
         </div>
 
-        {/* Borough filters */}
-        <div className="mb-6 flex flex-wrap gap-2">
+        <div className="mb-6 flex flex-wrap items-center gap-2">
           {boroughs.map((borough) => (
             <button
               key={borough}
@@ -101,14 +142,20 @@ export default function ExplorePage() {
               {borough}
             </button>
           ))}
+
+          {hasActiveFilters && (
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="ml-1 text-sm font-medium text-muted-foreground hover:text-foreground"
+            >
+              Clear filters
+            </button>
+          )}
         </div>
 
-        {/* Map */}
-        <NeighborhoodMap
-          neighborhoods={filteredNeighborhoods}
-        />
+        <NeighborhoodMap neighborhoods={filteredNeighborhoods} />
 
-        {/* Loading */}
         {loading && (
           <div className="flex items-center gap-3 py-8">
             <div className="h-5 w-5 animate-spin rounded-full border-2 border-muted border-t-primary" />
@@ -119,14 +166,12 @@ export default function ExplorePage() {
           </div>
         )}
 
-        {/* API error */}
         {error && (
           <p className="mt-5 text-sm text-muted-foreground">
             Map boundaries are available. Neighborhood details are temporarily unavailable.
           </p>
         )}
 
-        {/* Neighborhood results */}
         {!loading && !error && (
           <>
             <p className="mt-6 text-sm text-muted-foreground">
@@ -139,9 +184,11 @@ export default function ExplorePage() {
 
             <div className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {filteredNeighborhoods.map((neighborhood) => (
-                <div
+                <button
                   key={neighborhood.id}
-                  className="rounded-xl border p-4 transition hover:bg-muted/40"
+                  type="button"
+                  onClick={() => setSelectedNeighborhood(neighborhood)}
+                  className="rounded-xl border p-4 text-left transition hover:bg-muted/40"
                 >
                   <h2 className="text-lg font-semibold">
                     {neighborhood.name}
@@ -150,7 +197,7 @@ export default function ExplorePage() {
                   <p className="mt-1 text-sm text-muted-foreground">
                     {neighborhood.borough}
                   </p>
-                </div>
+                </button>
               ))}
             </div>
 
@@ -162,6 +209,100 @@ export default function ExplorePage() {
           </>
         )}
       </div>
+
+      {selectedNeighborhood && (
+        <div
+          className="fixed inset-0 z-50 flex justify-end bg-black/30"
+          onClick={() => setSelectedNeighborhood(null)}
+        >
+          <div
+            className="h-full w-full max-w-md overflow-y-auto bg-background p-6 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-6 flex items-start justify-between">
+              <div>
+                <h2 className="text-2xl font-bold">
+                  {selectedNeighborhood.name}
+                </h2>
+
+                <p className="mt-1 text-muted-foreground">
+                  {selectedNeighborhood.borough}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setSelectedNeighborhood(null)}
+                className="rounded-lg border p-2 hover:bg-muted"
+                aria-label="Close neighborhood details"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="space-y-6">
+              <div>
+                <h3 className="mb-3 font-semibold">
+                  Neighborhood Scores
+                </h3>
+
+                <div className="space-y-4">
+                  {scoreKeys.map(([key, label]) => {
+                    const rawValue =
+                      selectedNeighborhood.scores?.[key] ??
+                      selectedNeighborhood[`${key}_score`] ??
+                      0
+
+                    const value = Number(rawValue) || 0
+                    const percentage = Math.min(
+                      Math.max(value * 10, 0),
+                      100
+                    )
+
+                    return (
+                      <div key={key}>
+                        <div className="mb-1 flex justify-between text-sm">
+                          <span>{label}</span>
+                          <span>{value}/10</span>
+                        </div>
+
+                        <div className="h-2 overflow-hidden rounded-full bg-muted">
+                          <div
+                            className="h-full rounded-full bg-primary"
+                            style={{ width: `${percentage}%` }}
+                          />
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+
+              <div className="rounded-xl border p-4">
+                <h3 className="font-semibold">
+                  Rent
+                </h3>
+
+                <p className="mt-2 text-sm text-muted-foreground">
+                  {formatRent(selectedNeighborhood)}
+                </p>
+              </div>
+
+              <div className="rounded-xl border p-4">
+                <h3 className="font-semibold">
+                  Transit
+                </h3>
+
+                <p className="mt-2 text-sm text-muted-foreground">
+                  {selectedNeighborhood.transit?.description ||
+                    selectedNeighborhood.transit_info ||
+                    'Transit information will appear here.'}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   )
 }
