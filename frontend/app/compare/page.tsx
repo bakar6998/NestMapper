@@ -44,51 +44,56 @@ function ScoreBar({ value }: { value: number }) {
 
 function NeighborhoodColumn({
   data,
+  opponent,
   onRemove,
 }: {
   data: any
+  opponent: any
   onRemove: () => void
 }) {
-  const scores = data.scores
-    ? [
-        {
-          label: 'Affordability',
-          value: Math.round(
-            Number(data.scores.affordability_score) || 0
-          ),
-        },
-        {
-          label: 'Transit',
-          value: Math.round(
-            Number(data.scores.transit_score) || 0
-          ),
-        },
-        {
-          label: 'Safety',
-          value: Math.round(
-            Number(data.scores.safety_score) || 0
-          ),
-        },
-        {
-          label: 'Family',
-          value: Math.round(
-            Number(data.scores.family_score) || 0
-          ),
-        },
-        {
-          label: 'Accessibility',
-          value: Math.round(
-            Number(data.scores.accessibility_score) || 0
-          ),
-        },
-        {
-          label: 'Convenience',
-          value: Math.round(
-            Number(data.scores.convenience_score) || 0
-          ),
-        },
-      ]
-    : []
+  const scoreItems = [
+    {
+      label: 'Affordability',
+      key: 'affordability_score',
+    },
+    {
+      label: 'Transit',
+      key: 'transit_score',
+    },
+    {
+      label: 'Safety',
+      key: 'safety_score',
+    },
+    {
+      label: 'Family',
+      key: 'family_score',
+    },
+    {
+      label: 'Accessibility',
+      key: 'accessibility_score',
+    },
+    {
+      label: 'Convenience',
+      key: 'convenience_score',
+    },
+  ]
+
+  const scores = scoreItems.map((score) => {
+    const value = Math.round(
+      Number(data.scores?.[score.key]) || 0
+    )
+
+    const opponentValue = Math.round(
+      Number(opponent?.scores?.[score.key]) || 0
+    )
+
+    return {
+      label: score.label,
+      value,
+      isWinner: value > opponentValue,
+      isTie: value === opponentValue,
+    }
+  })
 
   const rent = Number(data.rent?.one_bedroom) || 0
 
@@ -156,8 +161,23 @@ function NeighborhoodColumn({
       <div className="mt-6 space-y-5">
         {scores.map((score) => (
           <div key={score.label}>
-            <div className="flex justify-between text-sm">
-              <span>{score.label}</span>
+            <div className="flex items-center justify-between gap-3 text-sm">
+              <div className="flex items-center gap-2">
+                <span>{score.label}</span>
+
+                {score.isWinner && (
+                  <span className="rounded-full bg-green-100 px-2 py-0.5 text-[11px] font-semibold text-green-700">
+                    Winner
+                  </span>
+                )}
+
+                {score.isTie && (
+                  <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
+                    Tie
+                  </span>
+                )}
+              </div>
+
               <strong>{score.value}/10</strong>
             </div>
 
@@ -215,22 +235,30 @@ export default function ComparePage() {
     useState(false)
 
   const [error, setError] = useState('')
+  const [compareError, setCompareError] =
+    useState('')
 
-  // Load all neighborhoods
   useEffect(() => {
     getNeighborhoods()
       .then((data) => {
-        setApiNeighborhoods(data)
+        const list = Array.isArray(data)
+          ? data
+          : data?.results ||
+            data?.neighborhoods ||
+            []
 
-        if (data.length >= 2) {
-          setFirst(data[0].name)
-          setSecond(data[1].name)
+        setApiNeighborhoods(list)
+
+        if (list.length >= 2) {
+          setFirst(list[0].name)
+          setSecond(list[1].name)
         }
 
         setError('')
       })
       .catch((err) => {
         console.error(err)
+
         setError(
           'Could not load neighborhoods from backend.'
         )
@@ -240,7 +268,6 @@ export default function ComparePage() {
       })
   }, [])
 
-  // Compare whenever selections change
   useEffect(() => {
     if (
       !first ||
@@ -262,25 +289,34 @@ export default function ComparePage() {
 
     if (firstN.id === secondN.id) {
       setComparisonData([])
+      setCompareError('')
       return
     }
 
     setCompareLoading(true)
+    setCompareError('')
 
     compareNeighborhoods([
       firstN.id,
       secondN.id,
     ])
       .then((data) => {
-        setComparisonData(
-          Array.isArray(data)
-            ? data
-            : data?.neighborhoods || []
-        )
+        const results = Array.isArray(data)
+          ? data
+          : data?.neighborhoods ||
+            data?.results ||
+            []
+
+        setComparisonData(results)
       })
       .catch((err) => {
         console.error(err)
+
         setComparisonData([])
+
+        setCompareError(
+          'Could not load comparison data. Please try again.'
+        )
       })
       .finally(() => {
         setCompareLoading(false)
@@ -449,16 +485,13 @@ export default function ComparePage() {
             </p>
 
             <h1 className="mt-3 text-balance text-4xl font-bold tracking-tight md:text-6xl">
-              Compare neighborhoods with
-              confidence.
+              Compare neighborhoods with confidence.
             </h1>
 
             <p className="mt-5 max-w-2xl text-base leading-7 text-muted-foreground md:text-lg">
-              Put two NYC neighborhoods next to
-              each other and see what really
-              matters: rent, commute, safety,
-              accessibility, and the feeling of
-              home.
+              Put two NYC neighborhoods next to each other
+              and see what really matters: rent, commute,
+              safety, accessibility, and the feeling of home.
             </p>
           </div>
         </section>
@@ -510,6 +543,9 @@ export default function ComparePage() {
                                 <option
                                   key={n.id}
                                   value={n.name}
+                                  disabled={
+                                    n.name === second
+                                  }
                                 >
                                   {n.name}
                                 </option>
@@ -561,6 +597,9 @@ export default function ComparePage() {
                                 <option
                                   key={n.id}
                                   value={n.name}
+                                  disabled={
+                                    n.name === first
+                                  }
                                 >
                                   {n.name}
                                 </option>
@@ -583,14 +622,19 @@ export default function ComparePage() {
             second &&
             first === second && (
               <p className="mt-3 text-sm text-amber-600">
-                Select two different
-                neighborhoods to compare.
+                Select two different neighborhoods to compare.
               </p>
             )}
 
           {compareLoading && (
             <p className="mt-4 text-sm text-muted-foreground">
               Updating comparison...
+            </p>
+          )}
+
+          {compareError && (
+            <p className="mt-3 text-sm text-red-500">
+              {compareError}
             </p>
           )}
         </section>
@@ -623,6 +667,11 @@ export default function ComparePage() {
                   <NeighborhoodColumn
                     key={`${item.name}-${index}`}
                     data={item}
+                    opponent={
+                      index === 0
+                        ? compared[1]
+                        : compared[0]
+                    }
                     onRemove={() =>
                       index === 0
                         ? setFirst(
@@ -654,9 +703,8 @@ export default function ComparePage() {
                   </h2>
 
                   <p className="mt-2 text-sm text-muted-foreground">
-                    See how both neighborhoods
-                    compare across NestMapper's
-                    six scoring dimensions.
+                    See how both neighborhoods compare
+                    across NestMapper&apos;s six scoring dimensions.
                   </p>
                 </div>
 
@@ -727,10 +775,9 @@ export default function ComparePage() {
               </h2>
 
               <p className="mt-3 max-w-xl text-sm leading-6 text-white/70">
-                Tell us your budget, lifestyle,
-                and priorities. We'll help you
-                build a shortlist worth seeing in
-                person.
+                Tell us your budget, lifestyle, and priorities.
+                We&apos;ll help you build a shortlist worth seeing
+                in person.
               </p>
             </div>
 
