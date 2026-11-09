@@ -4,175 +4,429 @@ import { useEffect, useRef } from 'react'
 import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 
-type Neighborhood = {
-  id: number
-  name: string
-  borough: string
-  latitude: number
-  longitude: number
+type NeighborhoodMapProps = {
+  neighborhoods?: any[]
 }
 
-type Props = {
-  neighborhoods: Neighborhood[]
+type GeoJsonFeature = {
+  type: 'Feature'
+  properties?: Record<string, any>
+  geometry?: {
+    type: string
+    coordinates: any
+  }
 }
 
-export default function NeighborhoodMap({ neighborhoods }: Props) {
-  const mapContainer = useRef<HTMLDivElement | null>(null)
-  const map = useRef<mapboxgl.Map | null>(null)
-  const markers = useRef<mapboxgl.Marker[]>([])
+type GeoJsonCollection = {
+  type: 'FeatureCollection'
+  features: GeoJsonFeature[]
+}
+
+function getFeatureName(feature: GeoJsonFeature) {
+  const properties = feature.properties || {}
+
+  return (
+    properties.NTAName ||
+    properties.ntaname ||
+    properties.name ||
+    properties.NTA2020 ||
+    ''
+  )
+}
+
+function normalizeName(name: string) {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '')
+}
+
+function collectCoordinates(
+  coordinates: any,
+  points: number[][] = []
+) {
+  if (
+    Array.isArray(coordinates) &&
+    typeof coordinates[0] === 'number' &&
+    typeof coordinates[1] === 'number'
+  ) {
+    points.push(coordinates)
+    return points
+  }
+
+  if (Array.isArray(coordinates)) {
+    coordinates.forEach((item) =>
+      collectCoordinates(item, points)
+    )
+  }
+
+  return points
+}
+
+function getFeatureCenter(feature: GeoJsonFeature) {
+  if (!feature.geometry?.coordinates) {
+    return null
+  }
+
+  const points = collectCoordinates(
+    feature.geometry.coordinates
+  )
+
+  if (points.length === 0) {
+    return null
+  }
+
+  let minLng = Infinity
+  let maxLng = -Infinity
+  let minLat = Infinity
+  let maxLat = -Infinity
+
+  points.forEach(([lng, lat]) => {
+    minLng = Math.min(minLng, lng)
+    maxLng = Math.max(maxLng, lng)
+    minLat = Math.min(minLat, lat)
+    maxLat = Math.max(maxLat, lat)
+  })
+
+  return {
+    lng: (minLng + maxLng) / 2,
+    lat: (minLat + maxLat) / 2,
+  }
+}
+
+export default function NeighborhoodMap({
+  neighborhoods = [],
+}: NeighborhoodMapProps) {
+  const mapContainer =
+    useRef<HTMLDivElement | null>(null)
+
+  const mapRef =
+    useRef<mapboxgl.Map | null>(null)
+
+  const geojsonRef =
+    useRef<GeoJsonCollection | null>(null)
+
+  const markersRef =
+    useRef<mapboxgl.Marker[]>([])
+
+  const neighborhoodsRef =
+    useRef<any[]>(neighborhoods)
 
   useEffect(() => {
-    if (!mapContainer.current || map.current) return
+    neighborhoodsRef.current = neighborhoods
 
-    const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN
+    const map = mapRef.current
+
+    if (
+      map &&
+      geojsonRef.current &&
+      map.loaded()
+    ) {
+      addNeighborhoodMarkers(
+        map,
+        geojsonRef.current,
+        neighborhoodsRef.current
+      )
+    }
+  }, [neighborhoods])
+
+  function clearMarkers() {
+    markersRef.current.forEach((marker) =>
+      marker.remove()
+    )
+
+    markersRef.current = []
+  }
+
+  function addNeighborhoodMarkers(
+    map: mapboxgl.Map,
+    geojson: GeoJsonCollection,
+    neighborhoodList: any[]
+  ) {
+    clearMarkers()
+
+    if (!Array.isArray(neighborhoodList)) {
+      return
+    }
+
+    neighborhoodList.forEach((neighborhood) => {
+      const neighborhoodName =
+        neighborhood?.name || ''
+
+      if (!neighborhoodName) return
+
+      const matchingFeature =
+        geojson.features.find((feature) => {
+          const featureName =
+            getFeatureName(feature)
+
+          return (
+            normalizeName(featureName) ===
+            normalizeName(neighborhoodName)
+          )
+        })
+
+      if (!matchingFeature) {
+        return
+      }
+
+      const center =
+        getFeatureCenter(matchingFeature)
+
+      if (!center) return
+
+      const popup = new mapboxgl.Popup({
+        offset: 20,
+      }).setHTML(`
+        <div style="padding:4px;">
+          <strong>${neighborhoodName}</strong>
+
+          <div
+            style="
+              font-size:12px;
+              margin-top:4px;
+            "
+          >
+            ${neighborhood.borough || 'New York City'}
+          </div>
+
+          ${
+            neighborhood.rent?.one_bedroom
+              ? `
+                <div
+                  style="
+                    font-size:12px;
+                    margin-top:4px;
+                  "
+                >
+                  1BR Rent:
+                  $${Number(
+                    neighborhood.rent.one_bedroom
+                  ).toLocaleString()}
+                </div>
+              `
+              : ''
+          }
+        </div>
+      `)
+
+      const marker =
+        new mapboxgl.Marker({
+          color: '#2563eb',
+        })
+          .setLngLat([
+            center.lng,
+            center.lat,
+          ])
+          .setPopup(popup)
+          .addTo(map)
+
+      markersRef.current.push(marker)
+    })
+  }
+
+  useEffect(() => {
+    if (!mapContainer.current) return
+
+    const token =
+      process.env.NEXT_PUBLIC_MAPBOX_TOKEN
 
     if (!token) {
-      console.error('Mapbox token is missing')
+      console.error(
+        'Mapbox token is missing.'
+      )
       return
     }
 
     mapboxgl.accessToken = token
 
-    const newMap = new mapboxgl.Map({
+    const map = new mapboxgl.Map({
       container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/light-v11',
-      center: [-73.94, 40.70],
+      style:
+        'mapbox://styles/mapbox/light-v11',
+      center: [-73.98, 40.72],
       zoom: 9.5,
     })
 
-    newMap.addControl(
+    mapRef.current = map
+
+    map.addControl(
       new mapboxgl.NavigationControl(),
       'top-right'
     )
 
-    newMap.on('load', () => {
-      newMap.addSource('nyc-neighborhoods', {
-        type: 'geojson',
-        data: '/nyc-neighborhoods.geojson',
-      })
-
-      newMap.addLayer({
-        id: 'neighborhood-fill',
-        type: 'fill',
-        source: 'nyc-neighborhoods',
-        paint: {
-          'fill-color': '#9ca3af',
-          'fill-opacity': 0.25,
-        },
-      })
-
-      newMap.addLayer({
-        id: 'neighborhood-border',
-        type: 'line',
-        source: 'nyc-neighborhoods',
-        paint: {
-          'line-color': '#ffffff',
-          'line-width': 1.5,
-        },
-      })
-
-      newMap.on('mouseenter', 'neighborhood-fill', () => {
-        newMap.getCanvas().style.cursor = 'pointer'
-      })
-
-      newMap.on('mouseleave', 'neighborhood-fill', () => {
-        newMap.getCanvas().style.cursor = ''
-      })
-
-      newMap.on('click', 'neighborhood-fill', (e) => {
-        const feature = e.features?.[0]
-
-        if (!feature) return
-
-        const properties =
-          (feature as { properties?: Record<string, unknown> }).properties ?? {}
-
-        const name = String(
-          properties.ntaname ||
-          properties.NTAName ||
-          'Neighborhood'
+    map.on('load', async () => {
+      try {
+        const response = await fetch(
+          '/nyc-neighborhoods.geojson'
         )
 
-        const borough = String(
-          properties.boroname ||
-          properties.BoroName ||
-          'New York City'
+        const geojson =
+          (await response.json()) as GeoJsonCollection
+
+        geojsonRef.current = geojson
+
+        map.addSource('neighborhoods', {
+          type: 'geojson',
+          data: geojson as any,
+        })
+
+        // Gray neighborhood polygons
+        map.addLayer({
+          id: 'neighborhood-fill',
+          type: 'fill',
+          source: 'neighborhoods',
+          paint: {
+            'fill-color': '#6b7280',
+            'fill-opacity': 0.6,
+          },
+        })
+
+        // White neighborhood boundary lines
+        map.addLayer({
+          id: 'neighborhood-outline',
+          type: 'line',
+          source: 'neighborhoods',
+          paint: {
+            'line-color': '#ffffff',
+            'line-width': 1.5,
+            'line-opacity': 0.95,
+          },
+        })
+
+        const hoverPopup =
+          new mapboxgl.Popup({
+            closeButton: false,
+            closeOnClick: false,
+            offset: 10,
+          })
+
+        map.on(
+          'mousemove',
+          'neighborhood-fill',
+          (event) => {
+            map.getCanvas().style.cursor =
+              'pointer'
+
+            const feature =
+              event.features?.[0] as
+                | GeoJsonFeature
+                | undefined
+
+            if (!feature) return
+
+            const neighborhoodName =
+              getFeatureName(feature) ||
+              'NYC Neighborhood'
+
+            hoverPopup
+              .setLngLat(event.lngLat)
+              .setHTML(`
+                <div
+                  style="
+                    font-size:13px;
+                    font-weight:600;
+                  "
+                >
+                  ${neighborhoodName}
+                </div>
+              `)
+              .addTo(map)
+          }
         )
 
-        const popupContent = document.createElement('div')
+        map.on(
+          'mouseleave',
+          'neighborhood-fill',
+          () => {
+            map.getCanvas().style.cursor =
+              ''
 
-        const title = document.createElement('strong')
-        title.textContent = name
+            hoverPopup.remove()
+          }
+        )
 
-        const boroughText = document.createElement('div')
-        boroughText.textContent = borough
+        map.on(
+          'click',
+          'neighborhood-fill',
+          (event) => {
+            const feature =
+              event.features?.[0] as
+                | GeoJsonFeature
+                | undefined
 
-        popupContent.appendChild(title)
-        popupContent.appendChild(boroughText)
+            if (!feature) return
 
-        new mapboxgl.Popup()
-          .setLngLat(e.lngLat)
-          .setDOMContent(popupContent)
-          .addTo(newMap)
-      })
+            const neighborhoodName =
+              getFeatureName(feature) ||
+              'NYC Neighborhood'
+
+            new mapboxgl.Popup()
+              .setLngLat(event.lngLat)
+              .setHTML(`
+                <div style="padding:4px;">
+                  <strong>
+                    ${neighborhoodName}
+                  </strong>
+
+                  <div
+                    style="
+                      font-size:12px;
+                      margin-top:3px;
+                    "
+                  >
+                    Click a marker or neighborhood
+                    card for more details.
+                  </div>
+                </div>
+              `)
+              .addTo(map)
+          }
+        )
+
+        // Add the neighborhood pins
+        addNeighborhoodMarkers(
+          map,
+          geojson,
+          neighborhoodsRef.current
+        )
+      } catch (error) {
+        console.error(
+          'Failed to load neighborhood boundaries:',
+          error
+        )
+      }
     })
 
-    map.current = newMap
-
     return () => {
-      markers.current.forEach((marker) => marker.remove())
-      markers.current = []
+      clearMarkers()
 
-      newMap.remove()
-      map.current = null
+      map.remove()
+      mapRef.current = null
     }
   }, [])
 
-  useEffect(() => {
-    if (!map.current) return
-
-    markers.current.forEach((marker) => marker.remove())
-    markers.current = []
-
-    neighborhoods.forEach((neighborhood) => {
-      if (
-        typeof neighborhood.latitude !== 'number' ||
-        typeof neighborhood.longitude !== 'number'
-      ) {
-        return
-      }
-
-      const popupContent = document.createElement('div')
-
-      const title = document.createElement('strong')
-      title.textContent = neighborhood.name
-
-      const boroughText = document.createElement('div')
-      boroughText.textContent = neighborhood.borough
-
-      popupContent.appendChild(title)
-      popupContent.appendChild(boroughText)
-
-      const popup = new mapboxgl.Popup({
-        offset: 25,
-      }).setDOMContent(popupContent)
-
-      const marker = new mapboxgl.Marker()
-        .setLngLat([
-          neighborhood.longitude,
-          neighborhood.latitude,
-        ])
-        .setPopup(popup)
-        .addTo(map.current!)
-
-      markers.current.push(marker)
-    })
-  }, [neighborhoods])
-
   return (
-    <div
-      ref={mapContainer}
-      className="h-[550px] w-full overflow-hidden rounded-2xl border"
-    />
+    <div className="relative overflow-hidden rounded-2xl border bg-muted">
+      <div
+        ref={mapContainer}
+        className="h-[500px] w-full"
+      />
+
+      <div className="absolute bottom-4 left-4 z-10 rounded-lg border bg-background/95 px-3 py-2 text-xs shadow-sm">
+        <div className="mb-2 font-semibold">
+          Map Legend
+        </div>
+
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <span className="h-3 w-3 rounded-sm border border-white bg-gray-500" />
+          Neighborhood boundary
+        </div>
+
+        <div className="mt-1 flex items-center gap-2 text-muted-foreground">
+          <span className="h-3 w-3 rounded-full bg-blue-600" />
+          Neighborhood marker
+        </div>
+      </div>
+    </div>
   )
 }
