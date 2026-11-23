@@ -16,6 +16,8 @@ import {
   ChevronDown,
 } from 'lucide-react'
 
+import NeighborhoodMap from '@/components/NeighborhoodMap'
+
 type Borough =
   | 'Manhattan'
   | 'Brooklyn'
@@ -159,7 +161,10 @@ function Navbar() {
             About
           </a>
 
-          <a href="/explore" className="button-primary md:ml-3">
+          <a
+            href="/explore"
+            className="button-primary md:ml-3"
+          >
             Get Started
           </a>
         </nav>
@@ -194,16 +199,24 @@ function Hero() {
         </h1>
 
         <p className="mt-7 max-w-xl text-pretty text-lg leading-8 text-muted-foreground">
-          A clearer way to understand New York City. Compare rent, safety,
-          transit, schools, and accessibility across all five boroughs.
+          A clearer way to understand New York City. Compare rent,
+          safety, transit, schools, and accessibility across all five
+          boroughs.
         </p>
 
         <div className="mt-9 flex flex-wrap gap-3">
-          <a className="button-primary" href="/explore">
-            Start exploring <ArrowRight data-icon="inline-end" />
+          <a
+            className="button-primary"
+            href="/explore"
+          >
+            Start exploring
+            <ArrowRight data-icon="inline-end" />
           </a>
 
-          <a className="button-secondary" href="/recommend">
+          <a
+            className="button-secondary"
+            href="/recommend"
+          >
             See neighborhood scores
           </a>
         </div>
@@ -227,7 +240,10 @@ function Hero() {
       </div>
 
       <div className="hero-visual">
-        <div className="hero-mark" aria-hidden="true" />
+        <div
+          className="hero-mark"
+          aria-hidden="true"
+        />
 
         <div className="hero-note">
           <span className="hero-note-icon">
@@ -236,12 +252,15 @@ function Hero() {
 
           <span>
             <strong>Built for better decisions</strong>
-            <small>Free, independent neighborhood data</small>
+            <small>
+              Free, independent neighborhood data
+            </small>
           </span>
         </div>
 
         <div className="hero-location">
           <MapPin />
+
           <span>
             New York City
             <br />
@@ -255,7 +274,8 @@ function Hero() {
 
 function SearchBar() {
   const [query, setQuery] = useState('')
-  const [borough, setBorough] = useState('All Boroughs')
+  const [borough, setBorough] =
+    useState('All Boroughs')
 
   return (
     <section
@@ -266,9 +286,12 @@ function SearchBar() {
         <div className="flex flex-col gap-3 lg:flex-row">
           <label className="input-wrap">
             <Search aria-hidden="true" />
+
             <input
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) =>
+                setQuery(e.target.value)
+              }
               placeholder="Search any NYC neighborhood..."
               aria-label="Search neighborhoods"
             />
@@ -277,10 +300,13 @@ function SearchBar() {
           <label className="select-wrap">
             <select
               value={borough}
-              onChange={(e) => setBorough(e.target.value)}
+              onChange={(e) =>
+                setBorough(e.target.value)
+              }
               aria-label="Filter by borough"
             >
               <option>All Boroughs</option>
+
               {[
                 'Manhattan',
                 'Brooklyn',
@@ -295,7 +321,10 @@ function SearchBar() {
             <ChevronDown aria-hidden="true" />
           </label>
 
-          <a href="/explore" className="button-primary justify-center">
+          <a
+            href="/explore"
+            className="button-primary justify-center"
+          >
             Search
           </a>
         </div>
@@ -305,22 +334,29 @@ function SearchBar() {
             Popular:
           </span>
 
-          {['Astoria', 'Williamsburg', 'Harlem', 'Park Slope', 'Riverdale'].map(
-            (chip) => (
-              <button
-                key={chip}
-                onClick={() => setQuery(chip)}
-                className="chip"
-              >
-                {chip}
-              </button>
-            )
-          )}
+          {[
+            'Astoria',
+            'Williamsburg',
+            'Harlem',
+            'Park Slope',
+            'Riverdale',
+          ].map((chip) => (
+            <button
+              key={chip}
+              onClick={() => setQuery(chip)}
+              className="chip"
+            >
+              {chip}
+            </button>
+          ))}
         </div>
 
         <p className="mt-4 text-sm text-muted-foreground">
-          {query || borough !== 'All Boroughs'
-            ? `Showing matches for ${query || borough}`
+          {query ||
+          borough !== 'All Boroughs'
+            ? `Showing matches for ${
+                query || borough
+              }`
             : 'Explore 50+ neighborhoods across New York City.'}
         </p>
       </div>
@@ -332,8 +368,10 @@ function ExploreFormSection() {
   const [budget, setBudget] = useState(2000)
   const [borough, setBorough] = useState('Any')
   const [transit, setTransit] = useState(3)
-  const [situation, setSituation] = useState('Professional')
-  const [priority, setPriority] = useState('Affordability')
+  const [situation, setSituation] =
+    useState('Professional')
+  const [priority, setPriority] =
+    useState('Affordability')
 
   return (
     <section
@@ -342,7 +380,9 @@ function ExploreFormSection() {
     >
       <div className="explore-split">
         <div className="preference-card">
-          <p className="eyebrow">FIND YOUR NEIGHBORHOOD</p>
+          <p className="eyebrow">
+            FIND YOUR NEIGHBORHOOD
+          </p>
 
           <h2>Tell us what matters to you</h2>
 
@@ -353,7 +393,10 @@ function ExploreFormSection() {
           <div className="preference-group">
             <div className="preference-label">
               <span>Monthly Budget</span>
-              <strong>${budget.toLocaleString()}/mo</strong>
+
+              <strong>
+                ${budget.toLocaleString()}/mo
+              </strong>
             </div>
 
             <input
@@ -363,7 +406,11 @@ function ExploreFormSection() {
               max="5000"
               step="100"
               value={budget}
-              onChange={(e) => setBudget(Number(e.target.value))}
+              onChange={(e) =>
+                setBudget(
+                  Number(e.target.value)
+                )
+              }
               aria-label="Monthly budget"
             />
           </div>
@@ -385,9 +432,13 @@ function ExploreFormSection() {
                 <button
                   key={item}
                   type="button"
-                  onClick={() => setBorough(item)}
+                  onClick={() =>
+                    setBorough(item)
+                  }
                   className={`preference-pill ${
-                    borough === item ? 'selected' : ''
+                    borough === item
+                      ? 'selected'
+                      : ''
                   }`}
                 >
                   {item}
@@ -402,35 +453,18 @@ function ExploreFormSection() {
             </span>
 
             <div className="pill-row">
-              {[1, 2, 3, 4, 5].map((item) => (
-                <button
-                  key={item}
-                  type="button"
-                  onClick={() => setTransit(item)}
-                  className={`preference-pill compact ${
-                    transit === item ? 'selected' : ''
-                  }`}
-                >
-                  {item}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="preference-group">
-            <span className="preference-title">
-              I am a...
-            </span>
-
-            <div className="pill-row">
-              {['Student', 'Professional', 'Family', 'Couple'].map(
+              {[1, 2, 3, 4, 5].map(
                 (item) => (
                   <button
                     key={item}
                     type="button"
-                    onClick={() => setSituation(item)}
-                    className={`preference-pill ${
-                      situation === item ? 'selected' : ''
+                    onClick={() =>
+                      setTransit(item)
+                    }
+                    className={`preference-pill compact ${
+                      transit === item
+                        ? 'selected'
+                        : ''
                     }`}
                   >
                     {item}
@@ -442,7 +476,38 @@ function ExploreFormSection() {
 
           <div className="preference-group">
             <span className="preference-title">
-              Most Important <small>(choose up to 3)</small>
+              I am a...
+            </span>
+
+            <div className="pill-row">
+              {[
+                'Student',
+                'Professional',
+                'Family',
+                'Couple',
+              ].map((item) => (
+                <button
+                  key={item}
+                  type="button"
+                  onClick={() =>
+                    setSituation(item)
+                  }
+                  className={`preference-pill ${
+                    situation === item
+                      ? 'selected'
+                      : ''
+                  }`}
+                >
+                  {item}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="preference-group">
+            <span className="preference-title">
+              Most Important{' '}
+              <small>(choose up to 3)</small>
             </span>
 
             <div className="pill-row">
@@ -457,12 +522,19 @@ function ExploreFormSection() {
                 <button
                   key={item}
                   type="button"
-                  onClick={() => setPriority(item)}
+                  onClick={() =>
+                    setPriority(item)
+                  }
                   className={`preference-pill ${
-                    priority === item ? 'selected' : ''
+                    priority === item
+                      ? 'selected'
+                      : ''
                   }`}
                 >
-                  {priority === item && <Check aria-hidden="true" />}
+                  {priority === item && (
+                    <Check aria-hidden="true" />
+                  )}
+
                   {item}
                 </button>
               ))}
@@ -480,9 +552,16 @@ function ExploreFormSection() {
                 'Own a car',
                 'Have children',
               ].map((item) => (
-                <label key={item} className="need-row">
+                <label
+                  key={item}
+                  className="need-row"
+                >
                   <span>{item}</span>
-                  <input type="checkbox" aria-label={item} />
+
+                  <input
+                    type="checkbox"
+                    aria-label={item}
+                  />
                 </label>
               ))}
             </div>
@@ -497,40 +576,36 @@ function ExploreFormSection() {
           </a>
         </div>
 
-        <div
-          className="live-map-card"
-          aria-label="Live map preview showing neighborhood matches"
-        >
-          <div className="map-preview-copy">
+        {/* Real Mapbox map added to landing page */}
+        <div className="overflow-hidden rounded-2xl border border-border bg-card">
+          <div className="border-b border-border p-5">
             <p className="eyebrow">
               <MapPin data-icon="inline-start" />
-              LIVE MAP PREVIEW
+              LIVE MAP
             </p>
 
-            <h2>
-              See your matches
-              <br />
-              on the map
+            <h2 className="mt-2 text-2xl font-bold">
+              See neighborhoods on the map
             </h2>
 
-            <p>
-              Explore color-coded neighborhoods across New York City.
+            <p className="mt-2 text-sm text-muted-foreground">
+              Use your preferences and explore NYC
+              neighborhoods directly from the landing
+              page.
             </p>
-
-            <a
-              href="/explore"
-              className="button-primary mt-5 inline-flex"
-            >
-              Open Interactive Map
-              <ArrowRight data-icon="inline-end" />
-            </a>
           </div>
 
-          <div className="map-orb orb-cyan" />
-          <div className="map-orb orb-green" />
-          <div className="map-orb orb-amber" />
-          <div className="map-orb orb-red" />
-          <MapPin className="preview-pin" aria-hidden="true" />
+          <NeighborhoodMap neighborhoods={[]} />
+
+          <div className="border-t border-border p-4">
+            <a
+              href="/explore"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline"
+            >
+              Open full Explore page
+              <ArrowRight size={16} />
+            </a>
+          </div>
         </div>
       </div>
     </section>
@@ -539,30 +614,48 @@ function ExploreFormSection() {
 
 function Features() {
   return (
-    <section id="about" className="section-wrap">
+    <section
+      id="about"
+      className="section-wrap"
+    >
       <div className="section-heading section-heading-split">
         <div>
-          <p className="eyebrow">BUILT AROUND YOUR LIFE</p>
+          <p className="eyebrow">
+            BUILT AROUND YOUR LIFE
+          </p>
+
           <h2>
             Everything You Need
-            <br className="hidden md:block" /> to Find Your Home
+            <br className="hidden md:block" /> to
+            Find Your Home
           </h2>
         </div>
 
         <p className="section-heading-note">
-          Less guesswork. More confidence in where your next chapter
-          begins.
+          Less guesswork. More confidence in where your
+          next chapter begins.
         </p>
       </div>
 
       <div className="feature-grid">
-        {features.map(({ icon: Icon, title, description }) => (
-          <article className="feature-card" key={title}>
-            <Icon className="text-primary" />
-            <h3>{title}</h3>
-            <p>{description}</p>
-          </article>
-        ))}
+        {features.map(
+          ({
+            icon: Icon,
+            title,
+            description,
+          }) => (
+            <article
+              className="feature-card"
+              key={title}
+            >
+              <Icon className="text-primary" />
+
+              <h3>{title}</h3>
+
+              <p>{description}</p>
+            </article>
+          )
+        )}
       </div>
     </section>
   )
@@ -576,13 +669,16 @@ function HowItWorks() {
     >
       <div className="section-heading section-heading-split">
         <div>
-          <p className="eyebrow">A CLEARER PATH HOME</p>
+          <p className="eyebrow">
+            A CLEARER PATH HOME
+          </p>
+
           <h2>How NestMapper NYC Works</h2>
         </div>
 
         <p className="section-heading-note">
-          Three simple ways to turn city data into a decision you can
-          feel good about.
+          Three simple ways to turn city data into a
+          decision you can feel good about.
         </p>
       </div>
 
@@ -603,16 +699,30 @@ function HowItWorks() {
             'Get Your Match',
             'Fill in your preferences and our algorithm finds your perfect neighborhood instantly',
           ],
-        ].map(([number, title, description], i) => (
-          <div className="step" key={number}>
-            <span>{number}</span>
-            <h3>{title}</h3>
-            <p>{description}</p>
-            {i < 2 && (
-              <ArrowRight className="step-arrow" aria-hidden="true" />
-            )}
-          </div>
-        ))}
+        ].map(
+          (
+            [number, title, description],
+            i
+          ) => (
+            <div
+              className="step"
+              key={number}
+            >
+              <span>{number}</span>
+
+              <h3>{title}</h3>
+
+              <p>{description}</p>
+
+              {i < 2 && (
+                <ArrowRight
+                  className="step-arrow"
+                  aria-hidden="true"
+                />
+              )}
+            </div>
+          )
+        )}
       </div>
     </section>
   )
@@ -630,10 +740,13 @@ function NeighborhoodCard({
           <p className="text-sm text-primary">
             {data.borough}
           </p>
+
           <h3>{data.name}</h3>
         </div>
 
-        <span className="vibe">{data.vibe}</span>
+        <span className="vibe">
+          {data.vibe}
+        </span>
       </div>
 
       <div className="scores">
@@ -641,7 +754,10 @@ function NeighborhoodCard({
           <div key={score.label}>
             <div className="mb-2 flex justify-between text-sm">
               <span>{score.label}</span>
-              <strong>{score.value}/10</strong>
+
+              <strong>
+                {score.value}/10
+              </strong>
             </div>
 
             <div className="score-track">
@@ -688,33 +804,41 @@ function BoroughSection() {
   return (
     <section className="section-wrap">
       <div className="section-heading">
-        <p className="eyebrow">THE FIVE BOROUGHS</p>
+        <p className="eyebrow">
+          THE FIVE BOROUGHS
+        </p>
+
         <h2>Explore All 5 Boroughs</h2>
       </div>
 
       <div className="borough-grid">
-        {boroughs.map(([name, count, rent, score]) => (
-          <a
-            className="borough-card"
-            href="/explore"
-            key={name}
-          >
-            <h3>{name}</h3>
-            <p>{count}</p>
+        {boroughs.map(
+          ([name, count, rent, score]) => (
+            <a
+              className="borough-card"
+              href="/explore"
+              key={name}
+            >
+              <h3>{name}</h3>
 
-            <div className="mt-7 flex justify-between text-sm">
-              <span>
-                <b>{rent}</b>
-                <small> avg rent</small>
-              </span>
+              <p>{count}</p>
 
-              <span>
-                <b>{score}</b>
-                <small> top score</small>
-              </span>
-            </div>
-          </a>
-        ))}
+              <div className="mt-7 flex justify-between text-sm">
+                <span>
+                  <b>{rent}</b>
+
+                  <small> avg rent</small>
+                </span>
+
+                <span>
+                  <b>{score}</b>
+
+                  <small> top score</small>
+                </span>
+              </div>
+            </a>
+          )
+        )}
       </div>
     </section>
   )
@@ -728,7 +852,11 @@ function App() {
       neighborhoods.filter(
         (n) =>
           !query ||
-          n.name.toLowerCase().includes(query.toLowerCase())
+          n.name
+            .toLowerCase()
+            .includes(
+              query.toLowerCase()
+            )
       ),
     [query]
   )
@@ -758,11 +886,14 @@ function App() {
                 START SOMEWHERE GOOD
               </p>
 
-              <h2>Featured Neighborhoods</h2>
+              <h2>
+                Featured Neighborhoods
+              </h2>
             </div>
 
             <p className="section-heading-note">
-              A quick look at places worth putting on your shortlist.
+              A quick look at places worth putting on
+              your shortlist.
             </p>
 
             <a
@@ -770,19 +901,23 @@ function App() {
               className="text-sm font-semibold text-primary"
             >
               View all neighborhoods
-              <ArrowRight className="ml-1 inline" size={16} />
+              <ArrowRight
+                className="ml-1 inline"
+                size={16}
+              />
             </a>
           </div>
 
           <div className="neighborhood-grid">
-            {(filtered.length ? filtered : neighborhoods).map(
-              (n) => (
-                <NeighborhoodCard
-                  data={n}
-                  key={n.name}
-                />
-              )
-            )}
+            {(filtered.length
+              ? filtered
+              : neighborhoods
+            ).map((n) => (
+              <NeighborhoodCard
+                data={n}
+                key={n.name}
+              />
+            ))}
           </div>
         </section>
 
@@ -802,19 +937,24 @@ function App() {
               </h2>
 
               <p>
-                Join thousands of New Yorkers making smarter
-                housing decisions with NestMapper NYC
+                Join thousands of New Yorkers making
+                smarter housing decisions with
+                NestMapper NYC
               </p>
             </div>
 
             <div>
-              <a href="/explore" className="button-light">
+              <a
+                href="/explore"
+                className="button-light"
+              >
                 Start Exploring Free
                 <ArrowRight data-icon="inline-end" />
               </a>
 
               <small>
-                No account required — completely free forever
+                No account required — completely free
+                forever
               </small>
             </div>
           </div>
@@ -822,7 +962,7 @@ function App() {
       </main>
 
       <footer>
-        <div className="mx-auto flex max-w-7xl flex-col gap-8 px-5 py-10 lg:px-8 md:flex-row md:items-end md:justify-between">
+        <div className="mx-auto flex max-w-7xl flex-col gap-8 px-5 py-10 md:flex-row md:items-end md:justify-between lg:px-8">
           <div>
             <a
               href="#top"
@@ -840,11 +980,25 @@ function App() {
           </div>
 
           <div className="flex flex-wrap gap-x-6 gap-y-3 text-sm text-muted-foreground">
-            <a href="/explore">Explore</a>
-            <a href="/compare">Compare</a>
-            <a href="/recommend">Recommend</a>
-            <a href="#about">About</a>
-            <a href="#">GitHub</a>
+            <a href="/explore">
+              Explore
+            </a>
+
+            <a href="/compare">
+              Compare
+            </a>
+
+            <a href="/recommend">
+              Recommend
+            </a>
+
+            <a href="#about">
+              About
+            </a>
+
+            <a href="#">
+              GitHub
+            </a>
           </div>
 
           <div className="text-left text-sm text-muted-foreground md:text-right">
@@ -853,7 +1007,8 @@ function App() {
             </p>
 
             <p className="mt-2">
-              © 2026 NestMapper NYC · Built for New Yorkers by New Yorkers
+              © 2026 NestMapper NYC · Built for New
+              Yorkers by New Yorkers
             </p>
           </div>
         </div>
